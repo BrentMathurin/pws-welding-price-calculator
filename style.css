@@ -40,13 +40,30 @@ header h1{
 .row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 .row label{flex:1;min-width:150px}
 label{display:flex;flex-direction:column;font-size:.9rem}
-input[type="number"],textarea, input[type="checkbox"]{
-  margin-top:6px;padding:8px;border:1px solid #d6e6f3;border-radius:6px;font-size:1rem;
+
+input[type="number"], input[type="text"], textarea{
+  margin-top:6px;
+  padding:8px;
+  border:1px solid #d6e6f3;
+  border-radius:6px;
+  font-size:1rem;
   background:#fff;
 }
-input[type="checkbox"]{width:auto;padding:6px;height:auto;border:0;background:transparent;margin-top:8px}
+input[readonly]{
+  background:#f8fbff;
+  border-color:#dbeaf7;
+}
+input[type="checkbox"]{
+  width:auto;
+  padding:6px;
+  height:auto;
+  border:0;
+  background:transparent;
+  margin-top:8px;
+}
 textarea{resize:vertical;min-height:44px}
 .materials{max-width:220px}
+
 fieldset{border:1px solid #e6f0f8;padding:10px;border-radius:6px;margin:8px 0}
 legend{padding:0 6px;font-weight:600;color:var(--green)}
 .help{font-size:.85rem;color:var(--muted);margin:6px 0}
@@ -60,12 +77,24 @@ legend{padding:0 6px;font-weight:600;color:var(--green)}
 .options .help-inline{display:block;font-size:.78rem;color:var(--muted);font-weight:500}
 .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
 button{
-  background:var(--blue);color:#fff;padding:8px 10px;border:0;border-radius:6px;cursor:pointer;font-weight:600;
+  background:var(--blue);
+  color:#fff;
+  padding:8px 10px;
+  border:0;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:600;
 }
 button#resetBtn{background:#666}
 button#exampleBtn{background:var(--green)}
 button:focus{outline:3px solid rgba(11,111,181,0.15)}
-.results{background:var(--card);padding:10px;border-radius:8px;box-shadow:0 2px 6px rgba(10,30,40,0.04)}
+
+.results{
+  background:var(--card);
+  padding:10px;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(10,30,40,0.04)
+}
 .results h2{margin:.2rem 0 .5rem}
 .validation{color:#a33;font-weight:700;margin-bottom:6px;min-height:22px}
 .grid{display:grid;grid-template-columns:1fr;gap:8px}
