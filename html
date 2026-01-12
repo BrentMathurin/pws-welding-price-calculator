@@ -74,7 +74,6 @@
           <label>Rush % <span class="help-inline">applies to labor only</span>
             <input id="rushPct" type="number" min="0" max="100" step="0.1" value="15" inputmode="decimal" />
           </label>
-
         </div>
 
         <div class="row">
@@ -109,8 +108,12 @@
         <div class="row">
           <div class="onsite-task">
             <div class="task-label">Shop labor hours (from tasks)</div>
-            <label class="mini">Min <input id="shopMin" class="min" type="number" min="0" step="0.01" value="0" /></label>
-            <label class="mini">Max <input id="shopMax" class="max" type="number" min="0" step="0.01" value="0" /></label>
+            <label class="mini">Min
+              <input id="shopMin" type="text" value="0.00" readonly />
+            </label>
+            <label class="mini">Max
+              <input id="shopMax" type="text" value="0.00" readonly />
+            </label>
             <div class="warn" id="shopWarn"></div>
           </div>
 
@@ -165,10 +168,10 @@
           <div class="line"><span>Total MAX hours</span><span id="totalMax">—</span></div>
 
           <h3>Labor</h3>
-          <div class="line"><span>Shop labor MIN</span><span id="shopLaborMin">—</span></div>
-          <div class="line"><span>Shop labor MAX</span><span id="shopLaborMax">—</span></div>
-          <div class="line"><span>On-site labor MIN</span><span id="siteLaborMin">—</span></div>
-          <div class="line"><span>On-site labor MAX</span><span id="siteLaborMax">—</span></div>
+          <div id="shopLaborMinLine" class="line hidden"><span>Shop labor MIN</span><span id="shopLaborMin">—</span></div>
+          <div id="shopLaborMaxLine" class="line hidden"><span>Shop labor MAX</span><span id="shopLaborMax">—</span></div>
+          <div id="siteLaborMinLine" class="line hidden"><span>On-site labor MIN</span><span id="siteLaborMin">—</span></div>
+          <div id="siteLaborMaxLine" class="line hidden"><span>On-site labor MAX</span><span id="siteLaborMax">—</span></div>
 
           <div class="line"><span>Total labor MIN</span><span id="laborMin">—</span></div>
           <div class="line"><span>Total labor MAX</span><span id="laborMax">—</span></div>
@@ -185,7 +188,7 @@
           <div class="line"><span>Materials</span><span id="materialsOut">—</span></div>
 
           <h3>Travel / Mobilization</h3>
-          <div class="line"><span>Travel total</span><span id="travelOut">—</span></div>
+          <div id="travelLine" class="line hidden"><span>Travel total</span><span id="travelOut">—</span></div>
 
           <h3>Subtotal</h3>
           <div class="line"><span>Subtotal MIN</span><span id="subMin">—</span></div>
