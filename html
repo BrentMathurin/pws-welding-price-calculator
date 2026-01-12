@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PWS — Welding Job Pricing Calculator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap" id="app">
+    <header>
+      <h1>Welding Job Pricing Calculator</h1>
+      <p class="lead">Quick estimate for labor, markup, rush and tax. Beginner-friendly — update values and see the quote instantly.</p>
+    </header>
+
+    <section class="controls">
+      <div class="row">
+        <label>Hourly rate (USD)
+          <input id="hourlyRate" type="number" min="0" step="0.01" value="95" inputmode="decimal" />
+        </label>
+
+        <label class="materials">Materials & consumables (USD)
+          <input id="materials" type="number" min="0" step="0.01" value="0" inputmode="decimal" />
+        </label>
+      </div>
+
+      <fieldset class="estimates">
+        <legend>Time estimates (hours)</legend>
+        <p class="help">Enter minimum and maximum hours for each task. If Min &gt; Max a warning appears and calculations are paused.</p>
+
+        <div class="task" data-key="fitup">
+          <div class="task-label">Fit-up / assembly</div>
+          <label class="mini">Min <input class="min" type="number" min="0" step="0.01" value="0" /></label>
+          <label class="mini">Max <input class="max" type="number" min="0" step="0.01" value="0" /></label>
+          <div class="warn"></div>
+        </div>
+
+        <div class="task" data-key="jointprep">
+          <div class="task-label">Joint prep (per weld symbols)</div>
+          <label class="mini">Min <input class="min" type="number" min="0" step="0.01" value="0" /></label>
+          <label class="mini">Max <input class="max" type="number" min="0" step="0.01" value="0" /></label>
+          <div class="warn"></div>
+        </div>
+
+        <div class="task" data-key="cleaning">
+          <div class="task-label">Weld area cleaning</div>
+          <label class="mini">Min <input class="min" type="number" min="0" step="0.01" value="0" /></label>
+          <label class="mini">Max <input class="max" type="number" min="0" step="0.01" value="0" /></label>
+          <div class="warn"></div>
+        </div>
+
+        <div class="task" data-key="welding">
+          <div class="task-label">Welding time
+            <label class="toggle"><input id="includeWelding" type="checkbox" checked /> include</label>
+          </div>
+          <label class="mini">Min <input class="min" type="number" min="0" step="0.01" value="0" /></label>
+          <label class="mini">Max <input class="max" type="number" min="0" step="0.01" value="0" /></label>
+          <div class="warn"></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="options">
+        <legend>Pricing options</legend>
+
+        <div class="row">
+          <label>Markup % <span class="help-inline">applies to labor only</span>
+            <input id="markup" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal" />
+          </label>
+
+          <label>Rush
+            <label class="toggle"><input id="rushOn" type="checkbox" /> apply</label>
+          </label>
+
+          <label>Rush % <span class="help-inline">applies to labor only</span>
+            <input id="rushPct" type="number" min="0" max="100" step="0.1" value="15" inputmode="decimal" />
+          </label>
+
+        </div>
+
+        <div class="row">
+          <label>Sales tax % <span class="help-inline">applies to final total</span>
+            <input id="taxPct" type="number" min="0" max="100" step="0.1" value="10" inputmode="decimal" />
+          </label>
+
+          <label class="notes">Job notes
+            <textarea id="notes" rows="2" placeholder="Optional: include client or project notes..."></textarea>
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button id="exampleBtn" type="button">Example Values</button>
+        <button id="resetBtn" type="button">Reset</button>
+        <button id="copyBtn" type="button">Copy Summary</button>
+      </div>
+    </section>
+
+    <section class="results" aria-live="polite">
+      <h2>Quote Summary</h2>
+      <div id="validation" class="validation" role="status" aria-atomic="true"></div>
+
+      <div class="grid" id="summaryPanel">
+        <div class="col">
+          <h3>Totals (hours)</h3>
+          <div class="line"><span>Total MIN hours</span><span id="totalMin">—</span></div>
+          <div class="line"><span>Total MAX hours</span><span id="totalMax">—</span></div>
+
+          <h3>Labor</h3>
+          <div class="line"><span>Labor MIN</span><span id="laborMin">—</span></div>
+          <div class="line"><span>Labor MAX</span><span id="laborMax">—</span></div>
+
+          <h3>Markup & Rush</h3>
+          <div class="line"><span>Labor markup MIN</span><span id="markupMin">—</span></div>
+          <div class="line"><span>Labor markup MAX</span><span id="markupMax">—</span></div>
+          <div class="line"><span>Rush surcharge MIN</span><span id="rushMin">—</span></div>
+          <div class="line"><span>Rush surcharge MAX</span><span id="rushMax">—</span></div>
+        </div>
+
+        <div class="col">
+          <h3>Materials</h3>
+          <div class="line"><span>Materials</span><span id="materialsOut">—</span></div>
+
+          <h3>Subtotal</h3>
+          <div class="line"><span>Subtotal MIN</span><span id="subMin">—</span></div>
+          <div class="line"><span>Subtotal MAX</span><span id="subMax">—</span></div>
+
+          <h3>Tax & Total</h3>
+          <div class="line"><span>Tax MIN</span><span id="taxMin">—</span></div>
+          <div class="line"><span>Tax MAX</span><span id="taxMax">—</span></div>
+          <div class="line total"><span>Total Price Range</span><span id="totalRange">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <small>© Progressive Welding Solutions — Educational estimate only. Verify local tax rules.</small>
+    </footer>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
