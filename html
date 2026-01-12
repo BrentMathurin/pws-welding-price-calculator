@@ -88,6 +88,65 @@
         </div>
       </fieldset>
 
+      <fieldset class="onsite-travel">
+        <legend>On-site & Travel (optional)</legend>
+        <p class="help">On-site rate is typically higher due to mobilization and lower efficiency. Travel adds call-out + mileage + tolls; taxable; not subject to markup/rush.</p>
+
+        <div class="row">
+          <label class="toggle">On-site work
+            <input id="onSite" type="checkbox" /> enable
+          </label>
+
+          <label>Shop hourly rate (USD)
+            <input id="shopRate" type="number" min="0" step="0.01" value="95" inputmode="decimal" />
+          </label>
+
+          <label>On-site hourly rate (USD)
+            <input id="siteRate" type="number" min="0" step="0.01" value="115" inputmode="decimal" />
+          </label>
+        </div>
+
+        <div class="row">
+          <div class="onsite-task">
+            <div class="task-label">Shop labor hours (from tasks)</div>
+            <label class="mini">Min <input id="shopMin" class="min" type="number" min="0" step="0.01" value="0" /></label>
+            <label class="mini">Max <input id="shopMax" class="max" type="number" min="0" step="0.01" value="0" /></label>
+            <div class="warn" id="shopWarn"></div>
+          </div>
+
+          <div class="onsite-task">
+            <div class="task-label">On-site labor hours</div>
+            <label class="mini">Min <input id="siteMin" class="min" type="number" min="0" step="0.01" value="0" /></label>
+            <label class="mini">Max <input id="siteMax" class="max" type="number" min="0" step="0.01" value="0" /></label>
+            <div class="warn" id="siteWarn"></div>
+          </div>
+        </div>
+
+        <hr />
+
+        <div class="row">
+          <label class="toggle">Travel / mobilization
+            <input id="travelOn" type="checkbox" /> enable
+          </label>
+
+          <label>Call-out / mobilization fee (USD)
+            <input id="calloutFee" type="number" min="0" step="0.01" value="0" inputmode="decimal" />
+          </label>
+
+          <label>Round-trip miles
+            <input id="miles" type="number" min="0" step="0.1" value="0" inputmode="decimal" />
+          </label>
+
+          <label>Mileage rate (USD/mi)
+            <input id="mileageRate" type="number" min="0" step="0.01" value="0.67" inputmode="decimal" />
+          </label>
+
+          <label>Tolls / parking (USD)
+            <input id="tolls" type="number" min="0" step="0.01" value="0" inputmode="decimal" />
+          </label>
+        </div>
+      </fieldset>
+
       <div class="actions">
         <button id="exampleBtn" type="button">Example Values</button>
         <button id="resetBtn" type="button">Reset</button>
@@ -106,8 +165,13 @@
           <div class="line"><span>Total MAX hours</span><span id="totalMax">—</span></div>
 
           <h3>Labor</h3>
-          <div class="line"><span>Labor MIN</span><span id="laborMin">—</span></div>
-          <div class="line"><span>Labor MAX</span><span id="laborMax">—</span></div>
+          <div class="line"><span>Shop labor MIN</span><span id="shopLaborMin">—</span></div>
+          <div class="line"><span>Shop labor MAX</span><span id="shopLaborMax">—</span></div>
+          <div class="line"><span>On-site labor MIN</span><span id="siteLaborMin">—</span></div>
+          <div class="line"><span>On-site labor MAX</span><span id="siteLaborMax">—</span></div>
+
+          <div class="line"><span>Total labor MIN</span><span id="laborMin">—</span></div>
+          <div class="line"><span>Total labor MAX</span><span id="laborMax">—</span></div>
 
           <h3>Markup & Rush</h3>
           <div class="line"><span>Labor markup MIN</span><span id="markupMin">—</span></div>
@@ -119,6 +183,9 @@
         <div class="col">
           <h3>Materials</h3>
           <div class="line"><span>Materials</span><span id="materialsOut">—</span></div>
+
+          <h3>Travel / Mobilization</h3>
+          <div class="line"><span>Travel total</span><span id="travelOut">—</span></div>
 
           <h3>Subtotal</h3>
           <div class="line"><span>Subtotal MIN</span><span id="subMin">—</span></div>
