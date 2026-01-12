@@ -1,0 +1,161 @@
+/* ================================
+   PWS Welding Job Pricing Calculator
+   Base Stylesheet
+   ================================ */
+
+:root {
+  --pws-blue: #1f6fd6;
+  --pws-green: #1fa67a;
+  --pws-bg: #f8fafc;
+  --pws-border: #e5e7eb;
+  --pws-text: #111827;
+  --pws-muted: #6b7280;
+  --pws-danger: #dc2626;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  color: var(--pws-text);
+  background: var(--pws-bg);
+}
+
+.calculator {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+h1 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--pws-blue);
+}
+
+p.help {
+  font-size: 0.875rem;
+  color: var(--pws-muted);
+  margin-bottom: 1rem;
+}
+
+/* Sections */
+.section {
+  border: 1px solid var(--pws-border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  background: #fff;
+}
+
+.section h2 {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  color: var(--pws-green);
+}
+
+/* Inputs */
+.field {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+label {
+  font-size: 0.8rem;
+  color: var(--pws-muted);
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--pws-border);
+  border-radius: 4px;
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--pws-blue);
+}
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+button {
+  padding: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--pws-blue);
+  color: #fff;
+}
+
+button.secondary {
+  background: var(--pws-green);
+  color: #fff;
+}
+
+button.ghost {
+  background: transparent;
+  border: 1px solid var(--pws-border);
+}
+
+/* Summary */
+.summary {
+  border-top: 2px solid var(--pws-blue);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+
+.summary-row.total {
+  font-weight: 600;
+  color: var(--pws-blue);
+}
+
+/* Warnings */
+.warning {
+  color: var(--pws-danger);
+  font-size: 0.75rem;
+}
+
+/* Footer */
+footer {
+  margin-top: 1rem;
+  font-size: 0.75rem;
+  color: var(--pws-muted);
+  text-align: center;
+}
+
+/* Mobile tweaks */
+@media (max-width: 480px) {
+  .field {
+    grid-template-columns: 1fr;
+  }
+}
