@@ -1,542 +1,567 @@
-(() => {
-  const $ = sel => document.querySelector(sel);
+// PWS Welding Job Pricing Calculator - Refactor (Option B)
+// Single-file application logic
 
-  // existing inputs
-  const hourlyRate = $('#hourlyRate');
-  const materials = $('#materials');
-  const includeWelding = $('#includeWelding');
-  const markup = $('#markup');
-  const rushOn = $('#rushOn');
-  const rushPct = $('#rushPct');
-  const taxPct = $('#taxPct');
-  const notes = $('#notes');
+(function () {
+  // Helpers
+  const el = id => document.getElementById(id);
+  const toNum = (v) => {
+    const n = parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const currency = (v) => {
+    if (v === null || v === undefined || Number.isNaN(v)) return '—';
+    return v.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+  };
+  const dash = '—';
 
-  const exampleBtn = $('#exampleBtn');
-  const resetBtn = $('#resetBtn');
-  const copyBtn = $('#copyBtn');
+  // Task inputs
+  const fitMin = el('fitMin');
+  const fitMax = el('fitMax');
+  const prepMin = el('prepMin');
+  const prepMax = el('prepMax');
+  const cleanMin = el('cleanMin');
+  const cleanMax = el('cleanMax');
+  const weldingInclude = el('weldingInclude');
+  const weldMin = el('weldMin');
+  const weldMax = el('weldMax');
 
-  const validation = $('#validation');
+  // Warnings
+  const fitWarn = el('fit-warn');
+  const prepWarn = el('prep-warn');
+  const cleanWarn = el('clean-warn');
+  const weldWarn = el('weld-warn');
+  const timeGlobalWarn = el('time-global-warning');
 
-  // onsite & travel inputs
-  const onSite = $('#onSite');
-  const shopRate = $('#shopRate');
-  const siteRate = $('#siteRate');
+  // Rates & location
+  const workShop = el('workShop');
+  const workOnsite = el('workOnsite');
+  const workMixed = el('workMixed');
 
-  // shopMin/shopMax are DISPLAY ONLY (readonly)
-  const shopMin = $('#shopMin');
-  const shopMax = $('#shopMax');
+  const shopRate = el('shopRate');
+  const onsiteRate = el('onsiteRate');
 
-  // on-site hours are user inputs
-  const siteMin = $('#siteMin');
-  const siteMax = $('#siteMax');
-  const siteWarn = $('#siteWarn');
-  const shopWarn = $('#shopWarn'); // kept for layout consistency; not used for validation
+  // Mixed inputs
+  const mixedPanel = el('mixed-hours');
+  const onSiteMin = el('onSiteMin');
+  const onSiteMax = el('onSiteMax');
+  const onsiteWarn = el('onsite-warn');
+  const shopHoursMinText = el('shopHoursMinText');
+  const shopHoursMaxText = el('shopHoursMaxText');
 
-  const travelOn = $('#travelOn');
-  const calloutFee = $('#calloutFee');
-  const miles = $('#miles');
-  const mileageRate = $('#mileageRate');
-  const tolls = $('#tolls');
+  // Pricing adjustments
+  const rushToggle = el('rushToggle');
+  const rushPercent = el('rushPercent');
+  const markupPercent = el('markupPercent');
+  const taxPercent = el('taxPercent');
 
-  // outputs
-  const totalMinOut = $('#totalMin');
-  const totalMaxOut = $('#totalMax');
-  const laborMinOut = $('#laborMin');
-  const laborMaxOut = $('#laborMax');
-  const markupMinOut = $('#markupMin');
-  const markupMaxOut = $('#markupMax');
-  const rushMinOut = $('#rushMin');
-  const rushMaxOut = $('#rushMax');
-  const materialsOut = $('#materialsOut');
-  const subMinOut = $('#subMin');
-  const subMaxOut = $('#subMax');
-  const taxMinOut = $('#taxMin');
-  const taxMaxOut = $('#taxMax');
-  const totalRangeOut = $('#totalRange');
+  // Travel
+  const travelRequired = el('travelRequired');
+  const travelPanel = el('travel-panel');
+  const travelCallout = el('travelCallout');
+  const travelDistance = el('travelDistance');
+  const travelMileageRate = el('travelMileageRate');
+  const travelTolls = el('travelTolls');
 
-  const shopLaborMinOut = $('#shopLaborMin');
-  const shopLaborMaxOut = $('#shopLaborMax');
-  const siteLaborMinOut = $('#siteLaborMin');
-  const siteLaborMaxOut = $('#siteLaborMax');
-  const travelOut = $('#travelOut');
+  // Materials
+  const materialsCost = el('materialsCost');
 
-  // summary row wrappers (robust hide/show)
-  const shopLaborMinLine = $('#shopLaborMinLine');
-  const shopLaborMaxLine = $('#shopLaborMaxLine');
-  const siteLaborMinLine = $('#siteLaborMinLine');
-  const siteLaborMaxLine = $('#siteLaborMaxLine');
-  const travelLine = $('#travelLine');
+  // Actions
+  const exampleBtn = el('exampleBtn');
+  const resetBtn = el('resetBtn');
+  const copyBtn = el('copyBtn');
 
-  const taskEls = Array.from(document.querySelectorAll('.task'));
+  // Summary fields
+  const sum_totalHours = el('sum_totalHours');
+  const sum_shopHours = el('sum_shopHours');
+  const sum_onsiteHours = el('sum_onsiteHours');
+  const sum_laborCost = el('sum_laborCost');
+  const sum_markup = el('sum_markup');
+  const sum_rush = el('sum_rush');
+  const sum_laborAfter = el('sum_laborAfter');
+  const sum_materials = el('sum_materials');
+  const sum_travel = el('sum_travel');
+  const sum_subtotalBeforeTax = el('sum_subtotalBeforeTax');
+  const sum_tax = el('sum_tax');
+  const sum_total = el('sum_total');
+  const totalHoursText = el('totalHoursText');
 
-  function readTasks() {
-    return taskEls.map(el => {
-      const key = el.dataset.key;
-      const min = Math.max(0, parseFloat(el.querySelector('.min').value) || 0);
-      const max = Math.max(0, parseFloat(el.querySelector('.max').value) || 0);
-      return { key, min, max, el };
-    });
+  // Defaults
+  const DEFAULTS = {
+    shopRate: 95,
+    onsiteRate: 115,
+    rushPercent: 15,
+    markupPercent: 0,
+    taxPercent: 10,
+    travelCallout: 0,
+    travelDistance: 0,
+    travelMileageRate: 0.67,
+    travelTolls: 0,
+    materialsCost: 0,
+  };
+
+  // Initialize defaults
+  function setDefaults() {
+    shopRate.value = DEFAULTS.shopRate;
+    onsiteRate.value = DEFAULTS.onsiteRate;
+    rushPercent.value = DEFAULTS.rushPercent;
+    markupPercent.value = DEFAULTS.markupPercent;
+    taxPercent.value = DEFAULTS.taxPercent;
+    travelCallout.value = DEFAULTS.travelCallout;
+    travelDistance.value = DEFAULTS.travelDistance;
+    travelMileageRate.value = DEFAULTS.travelMileageRate;
+    travelTolls.value = DEFAULTS.travelTolls;
+    materialsCost.value = DEFAULTS.materialsCost;
+
+    // Clear tasks
+    fitMin.value = fitMax.value = '';
+    prepMin.value = prepMax.value = '';
+    cleanMin.value = cleanMax.value = '';
+    weldingInclude.checked = false;
+    weldMin.value = weldMax.value = '';
+
+    // Location default to shop
+    workShop.checked = true;
+    onSiteMin.value = onSiteMax.value = '';
+
+    // Travel off
+    travelRequired.checked = false;
+    travelPanel.style.display = 'none';
+
+    // Clear warnings
+    clearAllWarnings();
+    update();
   }
 
-  function clampPctInput(input) {
-    let v = parseFloat(input.value);
-    if (isNaN(v)) v = 0;
-    v = Math.max(0, Math.min(100, v));
-    input.value = (Math.round(v * 10) / 10).toString();
-    return v / 100;
-  }
-
-  function currency(n) {
-    if (!isFinite(n)) return '—';
-    return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  }
-
-  function setText(el, txt) { if (el) el.textContent = txt; }
-  function showValidation(msg) { validation.textContent = msg || ''; }
-
-  function markInvalid(el, yes) {
-    if (!el) return;
-    if (yes) el.classList.add('invalid');
-    else el.classList.remove('invalid');
-  }
-
-  function setRowHidden(rowEl, hide) {
-    if (!rowEl) return;
-    rowEl.classList.toggle('hidden', !!hide);
-  }
-
-  function toggleOnSiteUI(enabled) {
-    [shopRate, siteRate, siteMin, siteMax].forEach(inp => inp.disabled = !enabled);
-
-    const groups = Array.from(document.querySelectorAll('.onsite-task'));
-    groups.forEach(n => enabled ? n.classList.remove('disabled') : n.classList.add('disabled'));
-
-    // clear shopWarn because shop hours are derived, not validated
-    if (shopWarn) shopWarn.textContent = '';
-  }
-
-  function toggleTravelUI(enabled) {
-    [calloutFee, miles, mileageRate, tolls].forEach(inp => inp.disabled = !enabled);
-  }
-
-  function clearOutputs() {
-    const outs = [
-      totalMinOut,totalMaxOut,laborMinOut,laborMaxOut,markupMinOut,markupMaxOut,
-      rushMinOut,rushMaxOut,materialsOut,subMinOut,subMaxOut,taxMinOut,taxMaxOut,
-      totalRangeOut,shopLaborMinOut,shopLaborMaxOut,siteLaborMinOut,siteLaborMaxOut,travelOut
-    ];
-    outs.forEach(o => setText(o, '—'));
-    if (shopMin) shopMin.value = '—';
-    if (shopMax) shopMax.value = '—';
-  }
-
-  function compute() {
-    const mk = clampPctInput(markup);
-    const tx = clampPctInput(taxPct);
-    const rPct = clampPctInput(rushPct);
-
-    rushPct.disabled = !rushOn.checked;
-    rushPct.style.opacity = rushOn.checked ? '1' : '0.5';
-
-    const tasks = readTasks();
-
-    // validate task min/max
-    let invalid = false;
-    tasks.forEach(t => {
-      const warn = t.el.querySelector('.warn');
-      if (t.min > t.max) {
-        warn.textContent = 'Min cannot be greater than Max';
-        markInvalid(t.el, true);
-        invalid = true;
-      } else {
-        warn.textContent = '';
-        markInvalid(t.el, false);
-      }
-    });
-
-    // validate on-site min/max only when enabled
-    const onSiteEnabled = onSite.checked;
-
-    const siteMinVal = Math.max(0, parseFloat(siteMin.value) || 0);
-    const siteMaxVal = Math.max(0, parseFloat(siteMax.value) || 0);
-    siteMin.value = siteMinVal;
-    siteMax.value = siteMaxVal;
-
-    if (onSiteEnabled) {
-      if (siteMinVal > siteMaxVal) {
-        siteWarn.textContent = 'Min cannot be greater than Max';
-        markInvalid(siteWarn.parentElement, true);
-        invalid = true;
-      } else {
-        siteWarn.textContent = '';
-        markInvalid(siteWarn.parentElement, false);
-      }
-    } else {
-      siteWarn.textContent = '';
-      markInvalid(siteWarn.parentElement, false);
-    }
-
-    // clamp travel inputs
-    const callout = Math.max(0, parseFloat(calloutFee.value) || 0);
-    const milesVal = Math.max(0, parseFloat(miles.value) || 0);
-    const mileage = Math.max(0, parseFloat(mileageRate.value) || 0);
-    const tollsVal = Math.max(0, parseFloat(tolls.value) || 0);
-
-    calloutFee.value = callout;
-    miles.value = milesVal;
-    mileageRate.value = mileage;
-    tolls.value = tollsVal;
-
-    if (invalid) {
-      showValidation('Please correct fields marked in red. Min must be ≤ Max.');
-      clearOutputs();
-      return;
-    } else {
-      showValidation('');
-    }
-
-    // aggregate task hours (respect welding toggle)
-    const weldingIncluded = includeWelding.checked;
-    const agg = tasks.reduce((acc, t) => {
-      const mult = (t.key === 'welding' && !weldingIncluded) ? 0 : 1;
-      acc.min += t.min * mult;
-      acc.max += t.max * mult;
-      return acc;
-    }, { min: 0, max: 0 });
-
-    // derived shop hours (readonly display)
-    if (shopMin) shopMin.value = agg.min.toFixed(2);
-    if (shopMax) shopMax.value = agg.max.toFixed(2);
-    if (shopWarn) shopWarn.textContent = '';
-
-    // compute labor
-    let shopLaborMin = 0, shopLaborMax = 0;
-    let onSiteLaborMin = 0, onSiteLaborMax = 0;
-    let laborMin = 0, laborMax = 0;
-
-    if (!onSiteEnabled) {
-      // legacy: single hourly rate
-      const hr = Math.max(0, parseFloat(hourlyRate.value) || 0);
-      shopLaborMin = agg.min * hr;
-      shopLaborMax = agg.max * hr;
-      laborMin = shopLaborMin;
-      laborMax = shopLaborMax;
-    } else {
-      const sRate = Math.max(0, parseFloat(shopRate.value) || 0);
-      const siteR = Math.max(0, parseFloat(siteRate.value) || 0);
-
-      shopLaborMin = agg.min * sRate;
-      shopLaborMax = agg.max * sRate;
-
-      onSiteLaborMin = siteMinVal * siteR;
-      onSiteLaborMax = siteMaxVal * siteR;
-
-      laborMin = shopLaborMin + onSiteLaborMin;
-      laborMax = shopLaborMax + onSiteLaborMax;
-    }
-
-    // markup/rush on labor only
-    const mkMin = laborMin * mk;
-    const mkMax = laborMax * mk;
-
-    const rushEnabled = rushOn.checked;
-    const rushMinVal = rushEnabled ? laborMin * rPct : 0;
-    const rushMaxVal = rushEnabled ? laborMax * rPct : 0;
-
-    // materials
-    const mats = Math.max(0, parseFloat(materials.value) || 0);
-
-    // travel (taxable, not subject to markup/rush)
-    const travelEnabled = travelOn.checked;
-    const travelTotal = travelEnabled ? (callout + (milesVal * mileage) + tollsVal) : 0;
-
-    // subtotal/tax/total
-    const subMin = laborMin + mkMin + rushMinVal + mats + travelTotal;
-    const subMax = laborMax + mkMax + rushMaxVal + mats + travelTotal;
-
-    const taxMin = subMin * tx;
-    const taxMax = subMax * tx;
-
-    const totalMin = subMin + taxMin;
-    const totalMax = subMax + taxMax;
-
-    // hours display: shop task hours + onsite hours (only if enabled)
-    const totalHrsMin = onSiteEnabled ? (agg.min + siteMinVal) : agg.min;
-    const totalHrsMax = onSiteEnabled ? (agg.max + siteMaxVal) : agg.max;
-
-    setText(totalMinOut, totalHrsMin.toFixed(2));
-    setText(totalMaxOut, totalHrsMax.toFixed(2));
-
-    setText(shopLaborMinOut, currency(shopLaborMin));
-    setText(shopLaborMaxOut, currency(shopLaborMax));
-    setText(siteLaborMinOut, currency(onSiteLaborMin));
-    setText(siteLaborMaxOut, currency(onSiteLaborMax));
-
-    setText(laborMinOut, currency(laborMin));
-    setText(laborMaxOut, currency(laborMax));
-
-    setText(markupMinOut, currency(mkMin));
-    setText(markupMaxOut, currency(mkMax));
-
-    setText(rushMinOut, currency(rushMinVal));
-    setText(rushMaxOut, currency(rushMaxVal));
-
-    setText(materialsOut, currency(mats));
-    setText(travelOut, currency(travelTotal));
-
-    setText(subMinOut, currency(subMin));
-    setText(subMaxOut, currency(subMax));
-
-    setText(taxMinOut, currency(taxMin));
-    setText(taxMaxOut, currency(taxMax));
-
-    setText(totalRangeOut, `${currency(totalMin)} — ${currency(totalMax)}`);
-
-    // hide/show breakdown rows
-    setRowHidden(shopLaborMinLine, !onSiteEnabled);
-    setRowHidden(shopLaborMaxLine, !onSiteEnabled);
-    setRowHidden(siteLaborMinLine, !onSiteEnabled);
-    setRowHidden(siteLaborMaxLine, !onSiteEnabled);
-
-    setRowHidden(travelLine, !travelEnabled);
-  }
-
-  function attach() {
+  // Hook up event listeners
+  function bindEvents() {
     const inputs = [
-      hourlyRate, materials, includeWelding, markup, rushOn, rushPct, taxPct, notes,
-      onSite, shopRate, siteRate, siteMin, siteMax,
-      travelOn, calloutFee, miles, mileageRate, tolls
+      fitMin, fitMax, prepMin, prepMax, cleanMin, cleanMax, weldingInclude, weldMin, weldMax,
+      shopRate, onsiteRate, onSiteMin, onSiteMax,
+      rushToggle, rushPercent, markupPercent, taxPercent,
+      travelRequired, travelCallout, travelDistance, travelMileageRate, travelTolls,
+      materialsCost
     ];
 
     inputs.forEach(i => {
-      i.addEventListener('input', compute);
-      i.addEventListener('change', compute);
+      if (i) i.addEventListener('input', update);
+      if (i && (i.type === 'checkbox')) i.addEventListener('change', update);
     });
 
-    taskEls.forEach(t => {
-      t.querySelectorAll('input').forEach(inp => {
-        inp.addEventListener('input', compute);
-        inp.addEventListener('change', compute);
+    // radios for location
+    [workShop, workOnsite, workMixed].forEach(r => {
+      r.addEventListener('change', () => {
+        updateMixedVisibility();
+        update();
       });
     });
 
-    onSite.addEventListener('change', () => {
-      toggleOnSiteUI(onSite.checked);
-      compute();
-    });
-
-    travelOn.addEventListener('change', () => {
-      toggleTravelUI(travelOn.checked);
-      compute();
+    travelRequired.addEventListener('change', () => {
+      travelPanel.style.display = travelRequired.checked ? 'block' : 'none';
+      update();
     });
 
     exampleBtn.addEventListener('click', () => {
-      hourlyRate.value = '95';
-
-      const map = { fitup:[1,2], jointprep:[0.5,1.5], cleaning:[0.25,0.5], welding:[1.5,3] };
-      taskEls.forEach(el => {
-        const key = el.dataset.key;
-        const arr = map[key] || [0,0];
-        el.querySelector('.min').value = arr[0];
-        el.querySelector('.max').value = arr[1];
-      });
-
-      includeWelding.checked = true;
-      materials.value = '120';
-      markup.value = '20';
-      rushOn.checked = true;
-      rushPct.value = '15';
-      taxPct.value = '10';
-      notes.value = 'Example: Fabrication for site A. Verify delivery & access.';
-
-      onSite.checked = true;
-      shopRate.value = '95';
-      siteRate.value = '115';
-      siteMin.value = '2';
-      siteMax.value = '4';
-
-      travelOn.checked = true;
-      calloutFee.value = '85';
-      miles.value = '40';
-      mileageRate.value = '0.67';
-      tolls.value = '10';
-
-      toggleOnSiteUI(onSite.checked);
-      toggleTravelUI(travelOn.checked);
-      compute();
+      setExampleValues();
+      update();
     });
 
     resetBtn.addEventListener('click', () => {
-      hourlyRate.value = '95';
-      taskEls.forEach(el => { el.querySelector('.min').value = '0'; el.querySelector('.max').value = '0'; });
-
-      includeWelding.checked = true;
-      materials.value = '0';
-      markup.value = '0';
-      rushOn.checked = false;
-      rushPct.value = '15';
-      taxPct.value = '10';
-      notes.value = '';
-
-      onSite.checked = false;
-      shopRate.value = '95';
-      siteRate.value = '115';
-      siteMin.value = '0';
-      siteMax.value = '0';
-
-      travelOn.checked = false;
-      calloutFee.value = '0';
-      miles.value = '0';
-      mileageRate.value = '0.67';
-      tolls.value = '0';
-
-      toggleOnSiteUI(onSite.checked);
-      toggleTravelUI(travelOn.checked);
-      compute();
+      setDefaults();
+      update();
     });
 
-    copyBtn.addEventListener('click', async () => {
-      compute(); // ensure UI is current
+    copyBtn.addEventListener('click', copySummary);
 
-      const tasks = readTasks();
-      if (tasks.some(t => t.min > t.max)) {
-        alert('Please fix min/max values before copying the summary.');
-        return;
-      }
-
-      const onSiteEnabled = onSite.checked;
-      if (onSiteEnabled && (parseFloat(siteMin.value) > parseFloat(siteMax.value))) {
-        alert('Please fix on-site min/max values before copying the summary.');
-        return;
-      }
-
-      const weldingIncluded = includeWelding.checked;
-      const agg = tasks.reduce((acc,t)=>{
-        const mult = (t.key === 'welding' && !weldingIncluded) ? 0 : 1;
-        acc.min += t.min * mult;
-        acc.max += t.max * mult;
-        return acc;
-      }, {min:0,max:0});
-
-      const mats = Math.max(0, parseFloat(materials.value) || 0);
-
-      const mkPct = Math.max(0, parseFloat(markup.value) || 0);
-      const rushEnabled = rushOn.checked;
-      const rushP = Math.max(0, parseFloat(rushPct.value) || 0);
-      const txP = Math.max(0, parseFloat(taxPct.value) || 0);
-
-      // Travel
-      const travelEnabled = travelOn.checked;
-      const callout = Math.max(0, parseFloat(calloutFee.value) || 0);
-      const milesVal = Math.max(0, parseFloat(miles.value) || 0);
-      const mileage = Math.max(0, parseFloat(mileageRate.value) || 0);
-      const tollsVal = Math.max(0, parseFloat(tolls.value) || 0);
-      const travelTotal = travelEnabled ? (callout + (milesVal * mileage) + tollsVal) : 0;
-
-      let shopLaborMin = 0, shopLaborMax = 0, siteLaborMin = 0, siteLaborMax = 0;
-      let laborMin = 0, laborMax = 0;
-
-      if (!onSiteEnabled) {
-        const hr = Math.max(0, parseFloat(hourlyRate.value) || 0);
-        shopLaborMin = agg.min * hr;
-        shopLaborMax = agg.max * hr;
-        laborMin = shopLaborMin;
-        laborMax = shopLaborMax;
-      } else {
-        const sRate = Math.max(0, parseFloat(shopRate.value) || 0);
-        const siteR = Math.max(0, parseFloat(siteRate.value) || 0);
-        const siteMinVal = Math.max(0, parseFloat(siteMin.value) || 0);
-        const siteMaxVal = Math.max(0, parseFloat(siteMax.value) || 0);
-
-        shopLaborMin = agg.min * sRate;
-        shopLaborMax = agg.max * sRate;
-        siteLaborMin = siteMinVal * siteR;
-        siteLaborMax = siteMaxVal * siteR;
-
-        laborMin = shopLaborMin + siteLaborMin;
-        laborMax = shopLaborMax + siteLaborMax;
-      }
-
-      const mkMin = laborMin * (mkPct/100);
-      const mkMax = laborMax * (mkPct/100);
-      const rushMin = rushEnabled ? laborMin * (rushP/100) : 0;
-      const rushMax = rushEnabled ? laborMax * (rushP/100) : 0;
-
-      const subMin = laborMin + mkMin + rushMin + mats + travelTotal;
-      const subMax = laborMax + mkMax + rushMax + mats + travelTotal;
-
-      const taxMin = subMin * (txP/100);
-      const taxMax = subMax * (txP/100);
-
-      const totalMin = subMin + taxMin;
-      const totalMax = subMax + taxMax;
-
-      const stamp = new Date().toLocaleString();
-
-      const taskLines = tasks.map(t => {
-        const excluded = (t.key === 'welding' && !weldingIncluded) ? ' (excluded)' : '';
-        return `- ${t.key}: ${t.min} – ${t.max} hrs${excluded}`;
-      }).join('\n');
-
-      const travelSection = travelEnabled ? [
-        `Travel / Mobilization:`,
-        `- Call-out fee: ${currency(callout)}`,
-        `- Miles: ${milesVal} @ ${currency(mileage)} / mi => ${currency(milesVal * mileage)}`,
-        `- Tolls / parking: ${currency(tollsVal)}`,
-        `- Travel total: ${currency(travelTotal)}`
-      ].join('\n') : 'Travel / Mobilization: not used';
-
-      const summary = [
-        `Progressive Welding Solutions — Quote Summary`,
-        `Date: ${stamp}`,
-        ``,
-        `Rates:`,
-        `- Legacy hourly rate: ${currency(Math.max(0, parseFloat(hourlyRate.value)||0))}`,
-        `- Shop hourly rate: ${currency(Math.max(0, parseFloat(shopRate.value)||0))}`,
-        `- On-site hourly rate: ${currency(Math.max(0, parseFloat(siteRate.value)||0))}`,
-        ``,
-        `Task hours (shop):`,
-        taskLines,
-        ``,
-        `Derived shop hours total: ${agg.min.toFixed(2)} – ${agg.max.toFixed(2)} hrs`,
-        `On-site hours: ${onSiteEnabled ? `${Math.max(0, parseFloat(siteMin.value)||0).toFixed(2)} – ${Math.max(0, parseFloat(siteMax.value)||0).toFixed(2)} hrs` : 'not used'}`,
-        ``,
-        `Labor:`,
-        `- Shop labor (MIN – MAX): ${currency(shopLaborMin)} – ${currency(shopLaborMax)}`,
-        `- On-site labor (MIN – MAX): ${currency(siteLaborMin)} – ${currency(siteLaborMax)}`,
-        `- Total labor (MIN – MAX): ${currency(laborMin)} – ${currency(laborMax)}`,
-        ``,
-        `Adjustments:`,
-        `- Markup (${mkPct}% on labor): ${currency(mkMin)} – ${currency(mkMax)}`,
-        `- Rush${rushEnabled ? ` (${rushP}% on labor)` : ''}: ${currency(rushMin)} – ${currency(rushMax)}`,
-        ``,
-        `Materials: ${currency(mats)}`,
-        ``,
-        travelSection,
-        ``,
-        `Subtotal (MIN – MAX): ${currency(subMin)} – ${currency(subMax)}`,
-        `Tax (${txP}%): ${currency(taxMin)} – ${currency(taxMax)}`,
-        `Total (MIN – MAX): ${currency(totalMin)} – ${currency(totalMax)}`,
-        ``,
-        `Notes:`,
-        notes.value || '(none)',
-        ``,
-        `Educational estimate only. Verify local tax rules.`
-      ].join('\n');
-
-      try {
-        await navigator.clipboard.writeText(summary);
-        copyBtn.textContent = 'Copied ✓';
-        setTimeout(() => copyBtn.textContent = 'Copy Summary', 1200);
-      } catch (err) {
-        alert('Copy failed. You can manually select the summary on the page to copy.');
-      }
-    });
-
-    toggleOnSiteUI(onSite.checked);
-    toggleTravelUI(travelOn.checked);
-    compute();
+    // initialize visibility
+    updateMixedVisibility();
+    travelPanel.style.display = travelRequired.checked ? 'block' : 'none';
   }
 
-  window.addEventListener('load', attach);
+  function updateMixedVisibility() {
+    if (workMixed.checked) {
+      mixedPanel.style.display = 'block';
+    } else {
+      mixedPanel.style.display = 'none';
+      // hide mixed warnings
+      onsiteWarn.textContent = '';
+    }
+  }
+
+  function clearAllWarnings() {
+    fitWarn.textContent = '';
+    prepWarn.textContent = '';
+    cleanWarn.textContent = '';
+    weldWarn.textContent = '';
+    onsiteWarn.textContent = '';
+    timeGlobalWarn.textContent = '';
+  }
+
+  // Validation for each task min/max
+  function validateTask(minVal, maxVal, warnEl) {
+    warnEl.textContent = '';
+    if (minVal > maxVal) {
+      warnEl.textContent = 'Min cannot be greater than Max';
+      return false;
+    }
+    return true;
+  }
+
+  function validateAllTasks(totalMin, totalMax) {
+    // read values
+    const fMin = toNum(fitMin.value);
+    const fMax = toNum(fitMax.value);
+    const pMin = toNum(prepMin.value);
+    const pMax = toNum(prepMax.value);
+    const cMin = toNum(cleanMin.value);
+    const cMax = toNum(cleanMax.value);
+    const wMin = toNum(weldMin.value);
+    const wMax = toNum(weldMax.value);
+
+    let ok = true;
+    if (!validateTask(fMin, fMax, fitWarn)) ok = false;
+    if (!validateTask(pMin, pMax, prepWarn)) ok = false;
+    if (!validateTask(cMin, cMax, cleanWarn)) ok = false;
+    if (weldingInclude.checked) {
+      if (!validateTask(wMin, wMax, weldWarn)) ok = false;
+    } else {
+      // clear weld warnings when not included
+      weldWarn.textContent = '';
+    }
+
+    if (!ok) {
+      timeGlobalWarn.textContent = 'Fix Min/Max errors to calculate totals.';
+    } else {
+      timeGlobalWarn.textContent = '';
+    }
+
+    return ok;
+  }
+
+  // Validate mixed on-site hours based on total hours
+  function validateMixed(totalMin, totalMax) {
+    onsiteWarn.textContent = '';
+    if (!workMixed.checked) return true;
+
+    const oMin = toNum(onSiteMin.value);
+    const oMax = toNum(onSiteMax.value);
+
+    if (oMin > oMax) {
+      onsiteWarn.textContent = 'Min cannot be greater than Max';
+      return false;
+    }
+    // require oMin <= totalMin and oMax <= totalMax
+    if (oMin < 0 || oMax < 0) {
+      onsiteWarn.textContent = 'On-site hours must be >= 0';
+      return false;
+    }
+    if (oMin > totalMin) {
+      onsiteWarn.textContent = 'On-site min cannot exceed total labor min';
+      return false;
+    }
+    if (oMax > totalMax) {
+      onsiteWarn.textContent = 'On-site max cannot exceed total labor max';
+      return false;
+    }
+    return true;
+  }
+
+  // Main update/calculation function
+  function update() {
+    // Clear computed placeholders first
+    totalHoursText.textContent = dash;
+
+    // Clear derived shop hours display
+    shopHoursMinText.textContent = dash;
+    shopHoursMaxText.textContent = dash;
+
+    // Reset summary
+    const resetSummary = () => {
+      const nodes = [sum_totalHours, sum_shopHours, sum_onsiteHours, sum_laborCost, sum_markup, sum_rush, sum_laborAfter, sum_materials, sum_travel, sum_subtotalBeforeTax, sum_tax, sum_total];
+      nodes.forEach(n => { n.textContent = dash; });
+      copyBtn.disabled = true;
+    };
+
+    clearAllWarnings();
+
+    // Read task values
+    const fMin = toNum(fitMin.value);
+    const fMax = toNum(fitMax.value);
+    const pMin = toNum(prepMin.value);
+    const pMax = toNum(prepMax.value);
+    const cMin = toNum(cleanMin.value);
+    const cMax = toNum(cleanMax.value);
+    const wMin = toNum(weldMin.value);
+    const wMax = toNum(weldMax.value);
+
+    // Validate tasks
+    const tasksOk = validateAllTasks();
+    if (!tasksOk) {
+      resetSummary();
+      totalHoursText.textContent = dash;
+      return;
+    }
+
+    // Compute totals depending on welding included
+    const totalMin = fMin + pMin + cMin + (weldingInclude.checked ? wMin : 0);
+    const totalMax = fMax + pMax + cMax + (weldingInclude.checked ? wMax : 0);
+
+    totalHoursText.textContent = `${totalMin.toFixed(2)} / ${totalMax.toFixed(2)}`;
+
+    // Validate mixed/onsite input if mixed selected
+    const mixedOk = validateMixed(totalMin, totalMax);
+    if (!mixedOk) {
+      resetSummary();
+      totalHoursText.textContent = `${totalMin.toFixed(2)} / ${totalMax.toFixed(2)}`;
+      copyBtn.disabled = true;
+      return;
+    }
+
+    // Location and rates
+    const sRate = toNum(shopRate.value);
+    const oRate = toNum(onsiteRate.value);
+
+    // Determine on-site/shop hours ranges
+    let onMin = 0, onMax = 0, shopMin = 0, shopMax = 0;
+
+    if (workShop.checked) {
+      onMin = onMax = 0;
+      shopMin = totalMin;
+      shopMax = totalMax;
+    } else if (workOnsite.checked) {
+      onMin = totalMin;
+      onMax = totalMax;
+      shopMin = shopMax = 0;
+    } else {
+      // mixed
+      onMin = toNum(onSiteMin.value);
+      onMax = toNum(onSiteMax.value);
+      // Derived shop hours: shop = total - onSite
+      shopMin = +(totalMin - onMin).toFixed(6);
+      shopMax = +(totalMax - onMax).toFixed(6);
+      // Ensure not negative
+      if (shopMin < 0) shopMin = 0;
+      if (shopMax < 0) shopMax = 0;
+    }
+
+    // Show derived shop hours (read-only)
+    shopHoursMinText.textContent = (Number.isFinite(shopMin) ? shopMin.toFixed(2) : dash);
+    shopHoursMaxText.textContent = (Number.isFinite(shopMax) ? shopMax.toFixed(2) : dash);
+
+    // Labor cost calculations
+    // Labor cost min/max = shopHours*shopRate + onSiteHours*onSiteRate
+    const laborCostMin = shopMin * sRate + onMin * oRate;
+    const laborCostMax = shopMax * sRate + onMax * oRate;
+
+    // Markup and rush (labor only)
+    const markupPct = toNum(markupPercent.value) / 100;
+    const rushPct = toNum(rushPercent.value) / 100;
+    const rushEnabled = rushToggle.checked;
+
+    const markupAmountMin = laborCostMin * markupPct;
+    const markupAmountMax = laborCostMax * markupPct;
+
+    const rushAmountMin = rushEnabled ? (laborCostMin * rushPct) : 0;
+    const rushAmountMax = rushEnabled ? (laborCostMax * rushPct) : 0;
+
+    const laborAfterMin = laborCostMin + markupAmountMin + rushAmountMin;
+    const laborAfterMax = laborCostMax + markupAmountMax + rushAmountMax;
+
+    // Materials
+    const materials = toNum(materialsCost.value);
+
+    // Travel subtotal
+    let travelSubtotal = 0;
+    if (travelRequired.checked) {
+      const callout = toNum(travelCallout.value);
+      const distance = toNum(travelDistance.value);
+      const mileageRate = toNum(travelMileageRate.value);
+      const tolls = toNum(travelTolls.value);
+      travelSubtotal = callout + (distance * mileageRate) + tolls;
+    } else {
+      travelSubtotal = 0;
+    }
+
+    // Subtotal before tax (min/max) = laborAfter + materials + travel
+    const subtotalMin = laborAfterMin + materials + travelSubtotal;
+    const subtotalMax = laborAfterMax + materials + travelSubtotal;
+
+    // Tax applies to final total (on subtotal)
+    const taxPct = toNum(taxPercent.value) / 100;
+    const taxAmountMin = subtotalMin * taxPct;
+    const taxAmountMax = subtotalMax * taxPct;
+
+    const totalMinVal = subtotalMin + taxAmountMin;
+    const totalMaxVal = subtotalMax + taxAmountMax;
+
+    // Update summary UI
+    sum_totalHours.textContent = `${totalMin.toFixed(2)} / ${totalMax.toFixed(2)} hrs`;
+    sum_shopHours.textContent = `${shopMin.toFixed(2)} / ${shopMax.toFixed(2)} hrs @ ${currency(sRate)}`;
+    sum_onsiteHours.textContent = `${onMin.toFixed(2)} / ${onMax.toFixed(2)} hrs @ ${currency(oRate)}`;
+    sum_laborCost.textContent = `${currency(laborCostMin)} / ${currency(laborCostMax)}`;
+    sum_markup.textContent = `${currency(markupAmountMin)} / ${currency(markupAmountMax)} (${(markupPct*100).toFixed(2)}%)`;
+    sum_rush.textContent = `${currency(rushAmountMin)} / ${currency(rushAmountMax)} ${rushEnabled ? '' : '(ignored)'}`;
+    sum_laborAfter.textContent = `${currency(laborAfterMin)} / ${currency(laborAfterMax)}`;
+    sum_materials.textContent = currency(materials);
+    sum_travel.textContent = currency(travelSubtotal);
+    sum_subtotalBeforeTax.textContent = `${currency(subtotalMin)} / ${currency(subtotalMax)}`;
+    sum_tax.textContent = `${currency(taxAmountMin)} / ${currency(taxAmountMax)} (${(taxPct*100).toFixed(2)}%)`;
+    sum_total.textContent = `${currency(totalMinVal)} / ${currency(totalMaxVal)}`;
+
+    // Enable copy
+    copyBtn.disabled = false;
+  }
+
+  // Copy summary to clipboard
+  function copySummary() {
+    // If copy disabled, do nothing
+    if (copyBtn.disabled) return;
+
+    // Check validation again quickly to ensure correct state
+    // Read task values and validate
+    const fMin = toNum(fitMin.value);
+    const fMax = toNum(fitMax.value);
+    const pMin = toNum(prepMin.value);
+    const pMax = toNum(prepMax.value);
+    const cMin = toNum(cleanMin.value);
+    const cMax = toNum(cleanMax.value);
+    const wMin = toNum(weldMin.value);
+    const wMax = toNum(weldMax.value);
+    if (!validateAllTasks()) {
+      navigator.clipboard?.writeText('Fix Min/Max errors to generate summary.')?.catch(()=>{});
+      return;
+    }
+
+    // Build a textual summary snapshot
+    const totalHours = sum_totalHours.textContent;
+    const shopRateVal = toNum(shopRate.value);
+    const onsiteRateVal = toNum(onsiteRate.value);
+
+    // Read values again for accurate numbers
+    const totalRange = sum_totalHours.textContent;
+    const shopHoursStr = sum_shopHours.textContent;
+    const onsiteHoursStr = sum_onsiteHours.textContent;
+    const laborCostStr = sum_laborCost.textContent;
+    const markupStr = sum_markup.textContent;
+    const rushStr = sum_rush.textContent;
+    const laborAfterStr = sum_laborAfter.textContent;
+    const materialsStr = sum_materials.textContent;
+    const travelStr = sum_travel.textContent;
+    const subtotalStr = sum_subtotalBeforeTax.textContent;
+    const taxStr = sum_tax.textContent;
+    const totalStr = sum_total.textContent;
+
+    const inputsSnapshot = [
+      `Work location: ${workShop.checked ? 'Shop only' : workOnsite.checked ? 'On-site only' : 'Mixed (shop+on-site)'}`,
+      `Shop rate: ${currency(shopRateVal)}`,
+      `On-site rate: ${currency(onsiteRateVal)}`,
+      `Rush job: ${rushToggle.checked ? 'Yes' : 'No'} (Rush %: ${toNum(rushPercent.value)}%)`,
+      `Markup % (labor): ${toNum(markupPercent.value)}%`,
+      `Sales tax % (final total): ${toNum(taxPercent.value)}%`,
+      `Materials & consumables: ${currency(toNum(materialsCost.value))}`,
+      `Travel required: ${travelRequired.checked ? 'Yes' : 'No'}`,
+    ];
+
+    if (workMixed.checked) {
+      inputsSnapshot.push(`On-site hours (min/max): ${onSiteMin.value || 0} / ${onSiteMax.value || 0}`);
+    }
+
+    if (travelRequired.checked) {
+      inputsSnapshot.push(`Travel callout: ${currency(toNum(travelCallout.value))}`);
+      inputsSnapshot.push(`Round-trip distance: ${toNum(travelDistance.value)} (units)`);
+      inputsSnapshot.push(`Mileage rate: ${currency(toNum(travelMileageRate.value))} per unit`);
+      inputsSnapshot.push(`Tolls/parking: ${currency(toNum(travelTolls.value))}`);
+    }
+
+    // Compose text
+    const lines = [
+      'PWS Welding Job Pricing Calculator - Summary',
+      '',
+      'INPUTS:',
+      ...inputsSnapshot,
+      '',
+      'TIME TOTALS:',
+      `Total labor hours (min/max): ${totalRange}`,
+      `Shop hours & rate: ${shopHoursStr}`,
+      `On-site hours & rate: ${onsiteHoursStr}`,
+      '',
+      'COSTS:',
+      `Labor cost (min/max): ${laborCostStr}`,
+      `Markup (min/max): ${markupStr}`,
+      `Rush (min/max): ${rushStr}`,
+      `Labor after markup + rush (min/max): ${laborAfterStr}`,
+      `Materials: ${materialsStr}`,
+      `Travel subtotal: ${travelStr}`,
+      `Subtotal before tax (min/max): ${subtotalStr}`,
+      `Sales tax (min/max): ${taxStr}`,
+      `TOTAL PRICE RANGE (min/max): ${totalStr}`,
+    ];
+
+    const finalText = lines.join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(finalText).then(() => {
+        copyBtn.textContent = 'Copied ✓';
+        setTimeout(() => copyBtn.textContent = 'Copy Summary', 1400);
+      }).catch(() => {
+        alert('Unable to copy to clipboard.');
+      });
+    } else {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = finalText;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied ✓';
+        setTimeout(() => copyBtn.textContent = 'Copy Summary', 1400);
+      } catch (e) {
+        alert('Unable to copy to clipboard.');
+      }
+      document.body.removeChild(ta);
+    }
+  }
+
+  function setExampleValues() {
+    // Example: mixed job, some task hours, travel enabled
+    fitMin.value = 2;
+    fitMax.value = 3;
+    prepMin.value = 1;
+    prepMax.value = 2;
+    cleanMin.value = 0.5;
+    cleanMax.value = 1;
+    weldingInclude.checked = true;
+    weldMin.value = 4;
+    weldMax.value = 6;
+
+    workMixed.checked = true;
+    workShop.checked = false;
+    workOnsite.checked = false;
+    shopRate.value = 95;
+    onsiteRate.value = 115;
+
+    // total min = 2+1+0.5+4 = 7.5 ; total max = 3+2+1+6 = 12
+    // set on-site hours within those ranges
+    onSiteMin.value = 3;
+    onSiteMax.value = 5;
+
+    rushToggle.checked = true;
+    rushPercent.value = 20;
+
+    markupPercent.value = 10;
+    taxPercent.value = 10;
+
+    materialsCost.value = 250;
+
+    travelRequired.checked = true;
+    travelPanel.style.display = 'block';
+    travelCallout.value = 150;
+    travelDistance.value = 120;
+    travelMileageRate.value = 0.67;
+    travelTolls.value = 12;
+  }
+
+  // INITIALIZE
+  bindEvents();
+  setDefaults();
 })();
